@@ -178,26 +178,35 @@ def get_pyfile(fname):
     return mod
 
 def validate_unittest(tester):
-    if tester.test_suite is None:
-        if tester.test_modules is None:
+    if tester.test_suite  is uninitialized and tester.test_suites is uninitialized:
+        if tester.test_module is uninitialized:
             raise DistutilsOptionError(
-                "You must specify a module or a suite"
+                "You must specify a module or a suite(s)"
             )
         tester.test_suite = self.test_module+".test_suite"
-    elif tester.test_module:
+    elif tester.test_module is not uninitialized:
         raise DistutilsOptionError(
             "You may specify a module or a suite, but not both"
         )
+    if tester.test_suites is uninitialized:
+        tester.test_suites = [tester.test_suite]
 
 @test.add_type('unittest', options=(
         ('test-module=','m', "Run 'test_suite' in specified module"),
         ('test-suite=','s',
             "Test suite to run (e.g. 'some_module.test_suite')"),
-    ), validate=validate_unittest)
+        ('test-suites=','l',
+            "A list of test suites to run (e.g. ['some_module.test_suite1', 'some_module.test_suite2'])"),
+        ), validate=validate_unittest)
+
 def run_unittest(tester):
     import unittest
+    # command_line_params are the argv passed to main(). The argv[0]
+    # is the program name - we use unittest's file name for this.
+    # The rest is the test suites to run
+    command_line_params = [unittest.__file__]
+    command_line_params.extend(tester.test_suites)
     unittest.main(
-        None, None, [unittest.__file__, tester.test_suite],
+        None, None, command_line_params,
         testLoader = unittest.TestLoader()
-    )
-
+        )
